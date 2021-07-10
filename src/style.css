@@ -1,8 +1,53 @@
+:root {
+  --color-bg-primary: #22272e;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+
+  background-color: var(--color-bg-primary);
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  display: flex;
+  justify-content: center;
+}
+
+canvas {
+  box-shadow: rgb(187 186 186 / 27%) 0px 0px 8px 1px, 0 0 5px 1px #b0b0b07d;
+  border-radius: 4px;
+}
+
+.control-panel {
+  position: fixed;
+  right: 0;
+  padding: 24px;
+}
+
+button {
+  background: none;
+  color: rgba(255, 255, 255, 0.753);
+  box-shadow: none;
+  border: none;
+  cursor: pointer;
+
+  transition: text-shadow cubic-bezier(0.215, 0.610, 0.355, 1) .1s, color cubic-bezier(0.215, 0.610, 0.355, 1) .25s;
+}
+
+button:hover {
+  text-shadow: 0 0 8px #ffffffcf;
+}
+
+button:active {
+  color: white;
+  text-shadow: 0 0 8px #fff;
 }
