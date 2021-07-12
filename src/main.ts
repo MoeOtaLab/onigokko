@@ -1,5 +1,5 @@
 import './style.css'
-import { throttle, clamp } from 'lodash'
+import { throttle, clamp, debounce } from 'lodash'
 import heroImg from './assets/christmas/3x_RMMV/xmas_santa_3.png'
 import snowmenImg from './assets/christmas/2019/snowmen_tiles_3.png'
 
@@ -113,7 +113,12 @@ class Controller {
   lastUpdateTime = Date.now()
   deltaTime = 0
 
-  constructor() {
+  ctx: CanvasRenderingContext2D
+
+  activeObjects: Set<BaseObject> = new Set()
+
+  constructor(ctx: CanvasRenderingContext2D) {
+    this.ctx = ctx
     window.addEventListener('keydown', this.handleKeyDown.bind(this))
     window.addEventListener('keyup', this.handleKeyUp.bind(this))
   }
@@ -146,13 +151,17 @@ class Controller {
     this.lastUpdateTime = now
   }
 
-  detectGame() {
+  detectGame(_hero: BaseObject) {
     return true
   }
-}
 
-class OnigokkoController extends Controller {
-  // detectGame() {}
+  addObject(obj: BaseObject) {
+    this.activeObjects.add(obj)
+  }
+
+  removeObject(obj: BaseObject) {
+    this.activeObjects.delete(obj)
+  }
 }
 
 class BaseObject {
@@ -282,6 +291,8 @@ class Hero extends BaseGridObject {
 }
 
 class Snowmen extends BaseGridObject {
+  resetDebounced: () => void
+
   constructor(ctx: CanvasRenderingContext2D, image: HTMLImageElement, controller: Controller) {
     super(ctx, image, controller, 7, 3,)
     this.gridY = 3
@@ -289,6 +300,8 @@ class Snowmen extends BaseGridObject {
     this.reset()
 
     this.controller.on('reset', this.reset.bind(this))
+
+    this.resetDebounced = debounce(this.reset, 300)
   }
 
   reset() {
@@ -296,12 +309,28 @@ class Snowmen extends BaseGridObject {
   }
 }
 
+class OnigokkoController extends Controller {
+  constructor(ctx: CanvasRenderingContext2D) {
+    super(ctx)
+  }
+}
 
 function setControllerPanel(controller: Controller) {
   const resetButton = document.querySelector<HTMLButtonElement>('#button-reset')
   resetButton?.addEventListener('click', () => {
     controller.emit('reset')
   })
+
+  const output = document.querySelector('.control-panel output')
+
+  function setScore(count: number) {
+    if (output) {
+      output.innerHTML = `${count}`
+    }
+  }
+  return {
+    setScore
+  }
 }
 
 async function main() {
@@ -320,12 +349,43 @@ async function main() {
   /** load assets */
   const { heroImage, snowmenImage } = await loadAssets()
 
-  const controller = new OnigokkoController()
+  const controller = new OnigokkoController(ctx)
 
   const hero = new Hero(ctx, heroImage, controller)
   const snowmen = new Snowmen(ctx, snowmenImage, controller)
 
-  setControllerPanel(controller)
+  const panel = setControllerPanel(controller)
+
+  controller.addObject(snowmen)
+
+  let score = 0
+
+  let timer = 0
+  function setAuto() {
+    timer = setInterval(() => {
+      snowmen.reset()
+    }, 5000)
+  }
+
+
+  function detectGame() {
+    if (
+      hero.x < (snowmen.x + snowmen.width) &&
+      snowmen.x < (hero.x + hero.width) &&
+      hero.y < (snowmen.y + snowmen.height) &&
+      snowmen.y < (hero.y + hero.height)
+    ) {
+      // touch.
+      clearInterval(timer)
+      snowmen.reset()
+      setAuto()
+      score++
+      panel.setScore(score)
+      return
+    }
+  }
+
+
 
   function render() {
     controller.updateTime()
@@ -334,9 +394,8 @@ async function main() {
     snowmen.render()
     hero.render()
 
-    if (controller.detectGame()) {
-      requestAnimationFrame(render)
-    }
+    detectGame()
+    requestAnimationFrame(render)
   }
 
   render()

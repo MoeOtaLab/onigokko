@@ -29,7 +29,16 @@ canvas {
 
 .control-panel {
   position: fixed;
+  left: 0;
   right: 0;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
+
+  color: white;
+
   padding: 24px;
 }
 
